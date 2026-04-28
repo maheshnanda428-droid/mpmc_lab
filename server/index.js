@@ -69,7 +69,7 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
       {
         folder: 'datasheets',
         resource_type: 'auto',
-        public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}`
+        public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}.pdf`
       },
       async (error, result) => {
         if (error) {
