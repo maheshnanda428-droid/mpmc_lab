@@ -2,6 +2,7 @@ services:
   - type: web
     name: mpmc-datasheets
     env: node
+    plan: free
     buildCommand: cd server && npm install
     startCommand: cd server && node index.js
     envVars:
@@ -9,7 +10,3 @@ services:
         value: 3001
       - key: NODE_ENV
         value: production
-    disk:
-      name: uploads-disk
-      mountPath: /server/uploads
-      sizeGB: 1
