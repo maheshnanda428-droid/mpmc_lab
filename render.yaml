@@ -8,5 +8,9 @@ services:
     envVars:
       - key: PORT
         value: 3001
-      - key: NODE_ENV
-        value: production
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

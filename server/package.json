@@ -10,10 +10,12 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^4.22.1",
     "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1"
   }

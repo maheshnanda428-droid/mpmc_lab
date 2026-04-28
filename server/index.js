@@ -5,6 +5,8 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { Sequelize, DataTypes } = require('sequelize');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +14,13 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Database Setup (SQLite)
 const sequelize = new Sequelize({
@@ -41,17 +50,17 @@ sequelize.sync()
   .then(() => console.log('Database synced successfully'))
   .catch(err => console.error('Error syncing database:', err));
 
-// Multer Storage Configuration (keep original extension)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
+// Cloudinary Storage Configuration for Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'datasheets',
+    format: async (req, file) => 'pdf', // force pdf format
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      return uniqueSuffix;
+    },
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
 });
 
 const upload = multer({ storage: storage });
@@ -66,11 +75,12 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Missing name or file' });
     }
 
-    const url = `/uploads/${req.file.filename}`;
+    // req.file.path will be the Cloudinary URL
+    const url = req.file.path;
     const datasheet = await Datasheet.create({
       name,
       url,
-      filename: req.file.filename
+      filename: req.file.filename // Cloudinary's public_id or filename
     });
 
     res.json({ success: true, datasheet });
@@ -92,9 +102,6 @@ app.get('/api/datasheets', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Serve the frontend (workspace root)
 app.use(express.static(path.join(__dirname, '..')));
