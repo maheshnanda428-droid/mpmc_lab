@@ -5,8 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { Sequelize, DataTypes } = require('sequelize');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,12 +14,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Cloudinary Configuration
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Supabase Configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Database Setup (SQLite)
 // On Render, we must use /tmp for a writable filesystem in the free tier
@@ -50,10 +47,12 @@ const Datasheet = sequelize.define('Datasheet', {
   }
 });
 
-// Sync Database
-sequelize.sync()
-  .then(() => console.log('Database synced successfully'))
-  .catch(err => console.error('Error syncing database:', err));
+// Sync Database and Initialize Supabase Bucket
+async function initialize() {
+  await sequelize.sync();
+  console.log('Database synced successfully');
+}
+initialize();
 
 // Temp storage for Multer
 const storage = multer.diskStorage({
@@ -78,17 +77,31 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Missing name or file' });
     }
 
-    // Upload the temp file to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'datasheets',
-      resource_type: 'auto'
-    });
+    const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+    const fileBuffer = fs.readFileSync(req.file.path);
 
-    // Create database entry
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('datasheets')
+      .upload(fileName, fileBuffer, {
+        contentType: 'application/pdf',
+        upsert: true
+      });
+
+    if (error) {
+      console.error('Supabase Error:', error);
+      return res.status(500).json({ error: 'Storage upload failed' });
+    }
+
+    // Get Public URL
+    const { data: publicData } = supabase.storage
+      .from('datasheets')
+      .getPublicUrl(fileName);
+
     const datasheet = await Datasheet.create({
       name,
-      url: result.secure_url,
-      filename: result.public_id
+      url: publicData.publicUrl,
+      filename: fileName
     });
 
     // Clean up temp file
@@ -97,7 +110,6 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
     res.json({ success: true, datasheet });
   } catch (error) {
     console.error('Upload error:', error);
-    // Cleanup on error if file exists
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
@@ -118,10 +130,9 @@ app.get('/api/datasheets', async (req, res) => {
   }
 });
 
-// Serve the frontend (workspace root)
+// Serve the frontend
 app.use(express.static(path.join(__dirname, '..')));
 
-// Default route to serve the HTML file
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'mpmc_frontend.html'));
 });
