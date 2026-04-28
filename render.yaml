@@ -3,7 +3,7 @@ services:
     name: mpmc-datasheets
     env: node
     plan: free
-    buildCommand: cd server && npm install && npm rebuild sqlite3
+    buildCommand: cd server && npm install --build-from-source sqlite3
     startCommand: cd server && node index.js
     envVars:
       - key: PORT
