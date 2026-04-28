@@ -55,11 +55,11 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'datasheets',
-    resource_type: 'auto', // Cloudinary will automatically handle it as a document
+    resource_type: 'image', // Best for opening PDFs in browsers
     public_id: (req, file) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const cleanName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
-      return `${uniqueSuffix}-${cleanName}.pdf`; // Explicitly add .pdf extension
+      return `${uniqueSuffix}-${cleanName}`; // Extension will be added automatically by Cloudinary
     },
   },
 });
