@@ -23,9 +23,14 @@ cloudinary.config({
 });
 
 // Database Setup (SQLite)
+// On Render, we must use /tmp for a writable filesystem in the free tier
+const dbPath = fs.existsSync('/tmp') 
+  ? '/tmp/database.sqlite' 
+  : path.join(__dirname, 'database.sqlite');
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, 'database.sqlite'),
+  storage: dbPath,
   logging: false
 });
 
@@ -53,7 +58,7 @@ sequelize.sync()
 // Temp storage for Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'temp');
+    const dir = fs.existsSync('/tmp') ? '/tmp' : path.join(__dirname, 'temp');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
     cb(null, dir);
   },
