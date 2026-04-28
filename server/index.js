@@ -55,10 +55,10 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'datasheets',
-    format: async (req, file) => 'pdf', // force pdf format
+    resource_type: 'raw', // This ensures PDFs are handled correctly as documents
     public_id: (req, file) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      return uniqueSuffix;
+      return uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9]/g, '_');
     },
   },
 });
