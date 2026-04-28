@@ -55,13 +55,12 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'datasheets',
-    resource_type: 'image',
+    resource_type: 'raw', // Safe storage of the original file
     public_id: (req, file) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const cleanName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
-      return `${uniqueSuffix}-${cleanName}`; // No .pdf here, Cloudinary adds it via 'format' or 'image' type
+      return `${uniqueSuffix}-${cleanName}.pdf`; // Include extension in public_id for raw files
     },
-    format: 'pdf', // Explicitly set format to pdf for the 'image' resource type
   },
 });
 

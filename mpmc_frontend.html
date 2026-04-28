@@ -362,7 +362,9 @@
         openBtn.onclick = () => {
             const url = dropdown.value;
             if (url) {
-                window.open(url, '_blank');
+                // Use Google PDF Viewer to force inline viewing
+                const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+                window.open(viewerUrl, '_blank');
             } else {
                 showToast("Please select a datasheet first", "warning");
             }
