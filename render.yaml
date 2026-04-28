@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mpmc-datasheets
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: uploads-disk
+      mountPath: /server/uploads
+      sizeGB: 1

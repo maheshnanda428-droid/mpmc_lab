@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IC Datasheets | Embedded Systems Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #3b82f6;
+            --bg-light: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-border: rgba(0, 0, 0, 0.05);
+            --text-main: #0f172a;
+            --text-dim: #64748b;
+            --accent: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+            margin-bottom: 0;
+        }
+
+        /* Container */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            z-index: 10;
+        }
+
+        /* Glass Card */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.08);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+        }
+
+        /* Input Styles */
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 16px 20px;
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Button Styles */
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: var(--text-main);
+            margin-top: 20px;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: var(--text-dim);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2);
+            animation: modalScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-dim);
+            transition: color 0.3s;
+        }
+
+        .close:hover { color: var(--text-main); }
+
+        /* File Upload */
+        .file-input-wrapper {
+            margin: 24px 0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 35px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-dim);
+            background: #f8fafc;
+        }
+
+        .file-label:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+            color: var(--primary);
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 28px;
+            border-radius: 16px;
+            background: white;
+            border-left: 5px solid var(--primary);
+            color: var(--text-main);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            transform: translateX(200%);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 1000;
+            font-weight: 500;
+        }
+
+        #toast.show { transform: translateX(0); }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes modalScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            .card { padding: 30px 20px; }
+            body { padding: 40px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>IC datasheets for Embedded systems</h1>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="card">
+                <h2>🔍 Search & Access</h2>
+                <div class="input-group">
+                    <input type="text" id="search" placeholder="Filter by processor name..." onkeyup="filterDatasheets()">
+                </div>
+                
+                <div class="input-group">
+                    <select id="datasheetDropdown">
+                        <option value="">-- Loading datasheets... --</option>
+                    </select>
+                </div>
+                
+                <button id="openBtn" class="btn-primary">
+                    Open Selected PDF
+                </button>
+            </div>
+
+            <button id="showUploadBtn" class="btn-outline">
+                <span>+</span> Upload New Datasheet
+            </button>
+        </main>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2 style="margin-bottom: 8px;">Add New Datasheet</h2>
+            <p style="color: var(--text-dim); margin-bottom: 30px; font-size: 0.95rem;">Upload component documentation to the library</p>
+            
+            <form id="uploadForm">
+                <div class="input-group">
+                    <input type="text" id="name" placeholder="Datasheet Name (e.g. ATmega328P)" required>
+                </div>
+                
+                <div class="file-input-wrapper">
+                    <label for="file" class="file-label" id="fileLabel">
+                        Select PDF File
+                    </label>
+                    <input type="file" id="file" accept="application/pdf" required>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    Confirm Upload
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">Message goes here</div>
+
+    <script>
+        const API_URL = '/api/datasheets';
+        let datasheets = [];
+
+        const dropdown = document.getElementById('datasheetDropdown');
+        const openBtn = document.getElementById('openBtn');
+        const searchInput = document.getElementById('search');
+        const uploadModal = document.getElementById('uploadModal');
+        const showUploadBtn = document.getElementById('showUploadBtn');
+        const closeModal = document.getElementById('closeModal');
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('file');
+        const fileLabel = document.getElementById('fileLabel');
+
+        // Initialize
+        async function loadDatasheets() {
+            try {
+                const response = await fetch(API_URL);
+                datasheets = await response.json();
+                updateDropdown(datasheets);
+            } catch (error) {
+                showToast("Failed to load datasheets", "error");
+            }
+        }
+
+        function updateDropdown(list) {
+            dropdown.innerHTML = list.length === 0 
+                ? '<option value="">No datasheets found</option>'
+                : '<option value="">-- Select a datasheet --</option>';
+            
+            list.forEach((d) => {
+                const option = document.createElement('option');
+                option.value = d.url;
+                option.textContent = d.name;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function filterDatasheets() {
+            const term = searchInput.value.toLowerCase().trim();
+            const filtered = datasheets.filter(d => d.name.toLowerCase().includes(term));
+            updateDropdown(filtered);
+
+            // Auto-select if exact match
+            const exactMatch = datasheets.find(d => d.name.toLowerCase() === term);
+            if (exactMatch) {
+                dropdown.value = exactMatch.url;
+            }
+        }
+
+        openBtn.onclick = () => {
+            const url = dropdown.value;
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                showToast("Please select a datasheet first", "warning");
+            }
+        };
+
+        // Modal Controls
+        showUploadBtn.onclick = () => {
+            uploadModal.style.display = 'flex';
+        };
+
+        closeModal.onclick = () => {
+            uploadModal.style.display = 'none';
+        };
+
+        window.onclick = (e) => {
+            if (e.target === uploadModal) uploadModal.style.display = 'none';
+        };
+
+        // File Selection Feedback
+        fileInput.onchange = () => {
+            if (fileInput.files.length > 0) {
+                fileLabel.textContent = fileInput.files[0].name;
+                fileLabel.style.borderColor = 'var(--primary)';
+                fileLabel.style.background = '#eff6ff';
+            }
+        };
+
+        // Handle Upload
+        uploadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Uploading...";
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showToast("Datasheet uploaded successfully!");
+                    uploadForm.reset();
+                    fileLabel.textContent = "Select PDF File";
+                    fileLabel.style.borderColor = '#cbd5e1';
+                    fileLabel.style.background = '#f8fafc';
+                    uploadModal.style.display = 'none';
+                    await loadDatasheets();
+                } else {
+                    throw new Error("Upload failed");
+                }
+            } catch (error) {
+                showToast("Error uploading file", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        };
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.borderLeftColor = type === "success" ? "var(--primary)" : "var(--accent)";
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initial Load
+        loadDatasheets();
+    </script>
+</body>
+</html>
