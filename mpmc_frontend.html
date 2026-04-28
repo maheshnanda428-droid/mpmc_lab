@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Build: 1777405352 -->
     <title>IC Datasheets | Embedded Systems Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -362,9 +363,7 @@
         openBtn.onclick = () => {
             const url = dropdown.value;
             if (url) {
-                // Use Mozilla's official PDF.js viewer for the best compatibility
-                const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
-                window.open(viewerUrl, '_blank');
+                window.open(url, '_blank');
             } else {
                 showToast("Please select a datasheet first", "warning");
             }
