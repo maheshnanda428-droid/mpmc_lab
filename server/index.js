@@ -50,8 +50,17 @@ sequelize.sync()
   .then(() => console.log('Database synced successfully'))
   .catch(err => console.error('Error syncing database:', err));
 
-// Memory Storage for Multer (we will stream to Cloudinary)
-const storage = multer.memoryStorage();
+// Temp storage for Multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'temp');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
 const upload = multer({ storage: storage });
 
 // API Endpoints
@@ -64,32 +73,29 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Missing name or file' });
     }
 
-    // Upload to Cloudinary using a stream
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'datasheets',
-        resource_type: 'auto',
-        public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}.pdf`
-      },
-      async (error, result) => {
-        if (error) {
-          console.error('Cloudinary Error:', error);
-          return res.status(500).json({ error: 'Cloudinary upload failed' });
-        }
+    // Upload the temp file to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'datasheets',
+      resource_type: 'auto'
+    });
 
-        const datasheet = await Datasheet.create({
-          name,
-          url: result.secure_url,
-          filename: result.public_id
-        });
+    // Create database entry
+    const datasheet = await Datasheet.create({
+      name,
+      url: result.secure_url,
+      filename: result.public_id
+    });
 
-        res.json({ success: true, datasheet });
-      }
-    );
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
 
-    uploadStream.end(req.file.buffer);
+    res.json({ success: true, datasheet });
   } catch (error) {
     console.error('Upload error:', error);
+    // Cleanup on error if file exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });
