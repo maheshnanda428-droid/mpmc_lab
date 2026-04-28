@@ -55,10 +55,11 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'datasheets',
-    resource_type: 'raw', // This ensures PDFs are handled correctly as documents
+    resource_type: 'image', // 'image' type on Cloudinary supports inline PDF viewing
     public_id: (req, file) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      return uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9]/g, '_');
+      // Remove extension from public_id but ensure it's treated as PDF
+      return uniqueSuffix + '-' + file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
     },
   },
 });
