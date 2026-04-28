@@ -50,20 +50,8 @@ sequelize.sync()
   .then(() => console.log('Database synced successfully'))
   .catch(err => console.error('Error syncing database:', err));
 
-// Cloudinary Storage Configuration for Multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'datasheets',
-    resource_type: 'image', // Best for opening PDFs in browsers
-    public_id: (req, file) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const cleanName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
-      return `${uniqueSuffix}-${cleanName}`; // Extension will be added automatically by Cloudinary
-    },
-  },
-});
-
+// Memory Storage for Multer (we will stream to Cloudinary)
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // API Endpoints
@@ -76,15 +64,30 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Missing name or file' });
     }
 
-    // req.file.path will be the Cloudinary URL
-    const url = req.file.path;
-    const datasheet = await Datasheet.create({
-      name,
-      url,
-      filename: req.file.filename // Cloudinary's public_id or filename
-    });
+    // Upload to Cloudinary using a stream
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'datasheets',
+        resource_type: 'auto',
+        public_id: `${Date.now()}-${Math.round(Math.random() * 1E9)}`
+      },
+      async (error, result) => {
+        if (error) {
+          console.error('Cloudinary Error:', error);
+          return res.status(500).json({ error: 'Cloudinary upload failed' });
+        }
 
-    res.json({ success: true, datasheet });
+        const datasheet = await Datasheet.create({
+          name,
+          url: result.secure_url,
+          filename: result.public_id
+        });
+
+        res.json({ success: true, datasheet });
+      }
+    );
+
+    uploadStream.end(req.file.buffer);
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Internal server error' });
