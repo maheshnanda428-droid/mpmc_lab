@@ -360,10 +360,30 @@
             }
         }
 
-        openBtn.onclick = () => {
+        openBtn.onclick = async () => {
             const url = dropdown.value;
             if (url) {
-                window.open(url, '_blank');
+                const originalText = openBtn.innerHTML;
+                openBtn.innerHTML = "<span>⌛</span> Opening...";
+                openBtn.disabled = true;
+
+                try {
+                    // Fetch the PDF and create a local blob URL to force inline viewing
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                    
+                    const newTab = window.open(blobUrl, '_blank');
+                    if (!newTab) {
+                        showToast("Please allow popups for this site", "warning");
+                    }
+                } catch (error) {
+                    // Fallback to direct link if fetch fails (CORS)
+                    window.open(url, '_blank');
+                } finally {
+                    openBtn.innerHTML = originalText;
+                    openBtn.disabled = false;
+                }
             } else {
                 showToast("Please select a datasheet first", "warning");
             }
