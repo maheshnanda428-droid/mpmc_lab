@@ -439,10 +439,11 @@
                     uploadModal.style.display = 'none';
                     await loadDatasheets();
                 } else {
-                    throw new Error("Upload failed");
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Upload failed");
                 }
             } catch (error) {
-                showToast("Error uploading file", "error");
+                showToast(error.message, "error");
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalBtnText;
