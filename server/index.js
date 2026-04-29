@@ -90,7 +90,8 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
 
     if (error) {
       console.error('Supabase Error:', error);
-      return res.status(500).json({ error: 'Storage upload failed' });
+      // Return the specific error to help debug
+      return res.status(500).json({ error: `Storage upload failed: ${error.message || 'Unknown error'}` });
     }
 
     // Get Public URL
@@ -105,7 +106,7 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
     });
 
     // Clean up temp file
-    fs.unlinkSync(req.file.path);
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
     res.json({ success: true, datasheet });
   } catch (error) {
@@ -113,7 +114,7 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: `Internal server error: ${error.message}` });
   }
 });
 
