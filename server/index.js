@@ -4,7 +4,6 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { Sequelize, DataTypes } = require('sequelize');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -18,41 +17,6 @@ app.use(express.json());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Database Setup (SQLite)
-// On Render, we must use /tmp for a writable filesystem in the free tier
-const dbPath = fs.existsSync('/tmp') 
-  ? '/tmp/database.sqlite' 
-  : path.join(__dirname, 'database.sqlite');
-
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  logging: false
-});
-
-// Model Definition
-const Datasheet = sequelize.define('Datasheet', {
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  url: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  filename: {
-    type: DataTypes.STRING,
-    allowNull: false
-  }
-});
-
-// Sync Database and Initialize Supabase Bucket
-async function initialize() {
-  await sequelize.sync();
-  console.log('Database synced successfully');
-}
-initialize();
 
 // Temp storage for Multer
 const storage = multer.diskStorage({
@@ -80,35 +44,38 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
     const fileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
     const fileBuffer = fs.readFileSync(req.file.path);
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    // 1. Upload File to Storage
+    const { data: storageData, error: storageError } = await supabase.storage
       .from('datasheets')
       .upload(fileName, fileBuffer, {
         contentType: 'application/pdf',
         upsert: true
       });
 
-    if (error) {
-      console.error('Supabase Error:', error);
-      // Return the specific error to help debug
-      return res.status(500).json({ error: `Storage upload failed: ${error.message || 'Unknown error'}` });
+    if (storageError) {
+      return res.status(500).json({ error: `Storage failed: ${storageError.message}` });
     }
 
-    // Get Public URL
+    // 2. Get Public URL
     const { data: publicData } = supabase.storage
       .from('datasheets')
       .getPublicUrl(fileName);
 
-    const datasheet = await Datasheet.create({
-      name,
-      url: publicData.publicUrl,
-      filename: fileName
-    });
+    // 3. Save to Permanent Database Table
+    const { data: dbData, error: dbError } = await supabase
+      .from('datasheets')
+      .insert([
+        { name, url: publicData.publicUrl, filename: fileName }
+      ]);
+
+    if (dbError) {
+      return res.status(500).json({ error: `Database failed: ${dbError.message}` });
+    }
 
     // Clean up temp file
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
-    res.json({ success: true, datasheet });
+    res.json({ success: true });
   } catch (error) {
     console.error('Upload error:', error);
     if (req.file && fs.existsSync(req.file.path)) {
@@ -121,10 +88,16 @@ app.post('/api/datasheets', upload.single('file'), async (req, res) => {
 // List endpoint
 app.get('/api/datasheets', async (req, res) => {
   try {
-    const datasheets = await Datasheet.findAll({
-      order: [['createdAt', 'DESC']]
-    });
-    res.json(datasheets);
+    const { data, error } = await supabase
+      .from('datasheets')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: `Fetch failed: ${error.message}` });
+    }
+
+    res.json(data);
   } catch (error) {
     console.error('Fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
